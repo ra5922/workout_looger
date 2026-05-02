@@ -31,9 +31,9 @@ export default function Login() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <h1 style={{ fontFamily: 'Syne', fontSize: '2.5rem', fontWeight: 800 }}>
-            <span style={{ color: 'var(--accent)' }}>LIFT</span>LOG
+            <span style={{ color: 'var(--accent)' }}>GYM</span>IQ
           </h1>
-          <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>Track every rep. Own every PR.</p>
+          <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>Train smarter. Track better. Get stronger.</p>
         </div>
 
         <div className="card">
