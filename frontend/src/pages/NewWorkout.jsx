@@ -79,7 +79,7 @@ export default function NewWorkout() {
           {/* Workout info */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h2 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)' }}>Session Info</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group">
                 <label>Workout Name</label>
                 <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Push Day A" required />
