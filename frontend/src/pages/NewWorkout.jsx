@@ -86,7 +86,7 @@ export default function NewWorkout() {
               </div>
               <div className="form-group">
                 <label>Date</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ width: '100%', maxWidth: '100%' }} />
               </div>
             </div>
             <div className="form-group">
