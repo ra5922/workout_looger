@@ -264,3 +264,9 @@ select option { background: var(--surface2); }
     font-size: 1.3rem;
   }
 }
+@media (max-width: 768px) {
+  input[type="date"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
