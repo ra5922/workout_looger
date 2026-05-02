@@ -274,3 +274,11 @@ select option { background: var(--surface2); }
   box-sizing: border-box;
   max-width: 100%;
 }
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
