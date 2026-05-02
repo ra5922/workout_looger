@@ -1,0 +1,202 @@
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import { getWorkouts, deleteWorkout, getStats, duplicateWorkout } from '../lib/api';
+
+function muscleGroupClass(group) {
+  const map = { Chest: 'chest', Back: 'back', Legs: 'legs', Shoulders: 'shoulders', Arms: 'arms', Core: 'core', Cardio: 'cardio', 'Full Body': 'full-body' };
+  return `badge badge-${map[group] || 'default'}`;
+}
+
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const [workouts, setWorkouts] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('date');
+  const [duplicating, setDuplicating] = useState(null);
+
+  useEffect(() => {
+    Promise.all([getWorkouts(), getStats()])
+      .then(([w, s]) => { setWorkouts(w); setStats(s); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleDelete = async (e, id) => {
+    e.preventDefault();
+    if (!confirm('Delete this workout?')) return;
+    await deleteWorkout(id);
+    setWorkouts(w => w.filter(x => x.id !== id));
+  };
+
+  const handleDuplicate = async (e, id) => {
+    e.preventDefault();
+    setDuplicating(id);
+    try {
+      const newWorkout = await duplicateWorkout(id);
+      const refreshed = await getWorkouts();
+      setWorkouts(refreshed);
+      navigate(`/workout/${newWorkout.id}`);
+    } catch (err) {
+      alert('Failed to duplicate: ' + err.message);
+    }
+    setDuplicating(null);
+  };
+
+  const getVolume = (w) =>
+    (w.workout_exercises || []).reduce((sum, ex) => sum + (ex.sets * ex.reps * (ex.weight_kg || 0)), 0);
+
+  const filtered = workouts.filter(w => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    if (w.name.toLowerCase().includes(q)) return true;
+    if ((w.workout_exercises || []).some(ex => ex.exercises?.name?.toLowerCase().includes(q))) return true;
+    return false;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'date') return new Date(b.date) - new Date(a.date);
+    if (sortBy === 'volume') return getVolume(b) - getVolume(a);
+    if (sortBy === 'exercises') return (b.workout_exercises?.length || 0) - (a.workout_exercises?.length || 0);
+    return 0;
+  });
+
+  const totalVolume = workouts
+    .flatMap(w => w.workout_exercises || [])
+    .reduce((sum, ex) => sum + (ex.sets * ex.reps * (ex.weight_kg || 0)), 0);
+
+  const prCount = stats ? Object.keys(stats.personal_records).length : 0;
+
+  return (
+    <>
+      <Navbar />
+      <div className="container">
+        <div className="page-header">
+          <h1 className="page-title">My Workouts</h1>
+          <Link to="/workout/new" className="btn btn-primary">+ New Workout</Link>
+        </div>
+
+        <div className="stat-grid" style={{ marginBottom: '2rem' }}>
+          <div className="stat-card">
+            <div className="stat-value">{workouts.length}</div>
+            <div className="stat-label">Sessions</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{Math.round(totalVolume).toLocaleString()}</div>
+            <div className="stat-label">Total kg lifted</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{prCount}</div>
+            <div className="stat-label">Exercises tracked</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">
+              {workouts.length > 0
+                ? Math.round(workouts.flatMap(w => w.workout_exercises || []).length / workouts.length)
+                : 0}
+            </div>
+            <div className="stat-label">Avg exercises/session</div>
+          </div>
+        </div>
+
+        {stats && prCount > 0 && (
+          <div className="card" style={{ marginBottom: '2rem' }}>
+            <h2 style={{ fontFamily: 'Syne', fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              🏆 Personal Records
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+              {Object.entries(stats.personal_records).map(([ex, kg]) => (
+                <div key={ex} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.9rem', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--muted)' }}>{ex}: </span>
+                  <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{kg} kg</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {workouts.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="🔍 Search by workout or exercise name..."
+              style={{ flex: 1, minWidth: '200px' }}
+            />
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ width: 'auto' }}>
+              <option value="date">Sort: Latest first</option>
+              <option value="volume">Sort: Most volume</option>
+              <option value="exercises">Sort: Most exercises</option>
+            </select>
+          </div>
+        )}
+
+        {loading ? (
+          <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '3rem 0' }}>Loading workouts…</p>
+        ) : workouts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏋️</div>
+            <p style={{ marginBottom: '1rem' }}>No workouts yet. Log your first session!</p>
+            <Link to="/workout/new" className="btn btn-primary">+ New Workout</Link>
+          </div>
+        ) : sorted.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--muted)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔍</div>
+            <p>No workouts match "<strong>{search}</strong>"</p>
+            <button className="btn btn-ghost" onClick={() => setSearch('')} style={{ marginTop: '0.75rem' }}>Clear search</button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '3rem' }}>
+            {sorted.map(w => (
+              <Link to={`/workout/${w.id}`} key={w.id} className="workout-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '1.05rem' }}>{w.name}</h3>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{formatDate(w.date)}</span>
+                      {sortBy === 'volume' && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 600 }}>
+                          {Math.round(getVolume(w)).toLocaleString()} kg
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.6rem' }}>
+                      {(w.workout_exercises || []).map(ex => (
+                        <span key={ex.id} className={muscleGroupClass(ex.exercises?.muscle_group)}>
+                          {ex.exercises?.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
+                      {(w.workout_exercises || []).length} exercises
+                    </span>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      title="Duplicate workout"
+                      onClick={e => handleDuplicate(e, w.id)}
+                      disabled={duplicating === w.id}
+                    >
+                      {duplicating === w.id ? '…' : '⧉'}
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={e => handleDelete(e, w.id)}
+                    >✕</button>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
