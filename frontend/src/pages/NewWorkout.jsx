@@ -107,7 +107,7 @@ export default function NewWorkout() {
 
             {rows.map((row, i) => (
               <div key={i} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '1rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: '0.75rem', alignItems: 'end' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
                   <div className="form-group">
                     <label>Exercise</label>
                     <select value={row.exercise_id} onChange={e => updateRow(i, 'exercise_id', e.target.value)}>
