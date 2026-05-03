@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getWorkouts, deleteWorkout, getStats, duplicateWorkout } from '../lib/api';
+import { useAuth } from '../hooks/useAuth';
 
 function muscleGroupClass(group) {
   const map = { Chest: 'chest', Back: 'back', Legs: 'legs', Shoulders: 'shoulders', Arms: 'arms', Core: 'core', Cardio: 'cardio', 'Full Body': 'full-body' };
@@ -14,6 +15,7 @@ function formatDate(dateStr) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { firstName } = useAuth();
   const [workouts, setWorkouts] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,14 @@ export default function Dashboard() {
       <Navbar />
       <div className="container">
         <div className="page-header">
-          <h1 className="page-title">My Workouts</h1>
+          <div>
+            {firstName && (
+              <p style={{ color: 'var(--accent)', fontFamily: 'Syne', fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.25rem' }}>
+                Welcome back, {firstName}! 💪
+              </p>
+            )}
+            <h1 className="page-title">My Workouts</h1>
+          </div>
           <Link to="/workout/new" className="btn btn-primary">+ New Workout</Link>
         </div>
 

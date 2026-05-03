@@ -2,14 +2,18 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { firstName, user, signOut } = useAuth();
 
   return (
     <nav>
       <div className="container nav-inner">
         <Link to="/" className="nav-logo">GYM<span>IQ</span></Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{user?.email}</span>
+        {firstName && (
+  <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontFamily: 'Syne', fontWeight: 600 }}>
+    👋 {firstName}
+  </span>
+)}
           <button className="btn btn-ghost btn-sm" onClick={signOut}>Sign out</button>
         </div>
       </div>
