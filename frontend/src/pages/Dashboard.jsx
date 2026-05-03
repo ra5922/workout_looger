@@ -15,7 +15,7 @@ function formatDate(dateStr) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { firstName } = useAuth();
+  const { firstName, isNewUser } = useAuth();
   const [workouts, setWorkouts] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -83,7 +83,7 @@ export default function Dashboard() {
           <div>
             {firstName && (
               <p style={{ color: 'var(--accent)', fontFamily: 'Syne', fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.25rem' }}>
-                Welcome back, {firstName}! 💪
+                {isNewUser ? `Welcome, ${firstName}! 💪` : `Welcome back, ${firstName}! 💪`}
               </p>
             )}
             <h1 className="page-title">My Workouts</h1>

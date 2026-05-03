@@ -51,9 +51,10 @@ export function AuthProvider({ children }) {
   const signOut = () => supabase.auth.signOut();
 
   const firstName = profile?.full_name?.split(' ')[0] || '';
+  const isNewUser = user?.created_at && (new Date() - new Date(user.created_at)) < 60000;
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, firstName }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, firstName, isNewUser }}>
       {children}
     </AuthContext.Provider>
   );
