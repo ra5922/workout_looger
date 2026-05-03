@@ -11,7 +11,7 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         {firstName && (
   <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontFamily: 'Syne', fontWeight: 600 }}>
-    👋 {firstName}
+    Hey, {firstName}. Let's get it.
   </span>
 )}
           <button className="btn btn-ghost btn-sm" onClick={signOut}>Sign out</button>
