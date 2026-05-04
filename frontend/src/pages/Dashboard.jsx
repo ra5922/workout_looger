@@ -91,6 +91,19 @@ export default function Dashboard() {
           <Link to="/workout/new" className="btn btn-primary">+ New Workout</Link>
         </div>
 
+        {/* Quick nav */}
+        <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+          {[
+            { to: '/progress', label: '📈 Progress' },
+            { to: '/weekly', label: '📅 Weekly' },
+            { to: '/templates', label: '📋 Templates' },
+            { to: '/bodyweight', label: '⚖️ Body Weight' },
+          ].map(({ to, label }) => (
+            <Link key={to} to={to} className="btn btn-secondary btn-sm">{label}</Link>
+          ))}
+        </div>
+
+        {/* Stats */}
         <div className="stat-grid" style={{ marginBottom: '2rem' }}>
           <div className="stat-card">
             <div className="stat-value">{workouts.length}</div>
@@ -114,6 +127,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Personal Records */}
         {stats && prCount > 0 && (
           <div className="card" style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontFamily: 'Syne', fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -130,6 +144,7 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Search & Sort */}
         {workouts.length > 0 && (
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
             <input
@@ -146,6 +161,7 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Workout List */}
         {loading ? (
           <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '3rem 0' }}>Loading workouts…</p>
         ) : workouts.length === 0 ? (
@@ -161,7 +177,7 @@ export default function Dashboard() {
             <button className="btn btn-ghost" onClick={() => setSearch('')} style={{ marginTop: '0.75rem' }}>Clear search</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '3rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '5rem' }}>
             {sorted.map(w => (
               <Link to={`/workout/${w.id}`} key={w.id} className="workout-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>

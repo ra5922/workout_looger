@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const BASE_URL = '/api';
 
 async function getHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -32,3 +32,14 @@ export const duplicateWorkout = (id) => apiFetch(`/workouts/${id}/duplicate`, { 
 // Exercises
 export const getExercises = () => apiFetch('/exercises');
 export const createExercise = (body) => apiFetch('/exercises', { method: 'POST', body: JSON.stringify(body) });
+
+// Body Weight
+export const getBodyWeight = () => apiFetch('/bodyweight');
+export const logBodyWeight = (body) => apiFetch('/bodyweight', { method: 'POST', body: JSON.stringify(body) });
+export const deleteBodyWeight = (id) => apiFetch(`/bodyweight/${id}`, { method: 'DELETE' });
+
+// Templates
+export const getTemplates = () => apiFetch('/templates');
+export const createTemplate = (body) => apiFetch('/templates', { method: 'POST', body: JSON.stringify(body) });
+export const deleteTemplate = (id) => apiFetch(`/templates/${id}`, { method: 'DELETE' });
+export const useTemplate = (id) => apiFetch(`/templates/${id}/use`, { method: 'POST' });
