@@ -94,10 +94,10 @@ export default function Dashboard() {
         {/* Quick nav */}
         <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
           {[
-            { to: '/progress', label: '📈 Progress' },
-            { to: '/weekly', label: '📅 Weekly' },
-            { to: '/templates', label: '📋 Templates' },
-            { to: '/bodyweight', label: '⚖️ Body Weight' },
+            { to: '/progress', label: ' Progress' },
+            { to: '/weekly', label: ' Weekly' },
+            { to: '/templates', label: ' Templates' },
+            { to: '/bodyweight', label: ' Body Weight' },
           ].map(({ to, label }) => (
             <Link key={to} to={to} className="btn btn-secondary btn-sm">{label}</Link>
           ))}
