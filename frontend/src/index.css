@@ -282,3 +282,12 @@ input[type="date"] {
   min-width: 0 !important;
   box-sizing: border-box !important;
 }
+.gymiq-sidebar { left: -220px; }
+.gymiq-main   { margin-left: 0; }
+
+@media (min-width: 768px) {
+  .gymiq-sidebar        { left: 0 !important; }
+  .gymiq-main           { margin-left: 220px !important; }
+  .gymiq-hamburger      { display: none !important; }
+  .gymiq-main-inner     { max-width: 780px; margin: 0 auto; padding: 1.5rem; }
+}
