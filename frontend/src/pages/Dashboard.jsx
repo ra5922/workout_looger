@@ -29,7 +29,7 @@ const NAV_ITEMS = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { firstName, isNewUser } = useAuth();
+  const { firstName, isNewUser, signOut } = useAuth();
   const [workouts, setWorkouts] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +107,7 @@ export default function Dashboard() {
       )}
 
       {/* Sidebar */}
-      <aside style={{
+      <aside className="gymiq-sidebar" style={{
         width: '220px',
         flexShrink: 0,
         background: 'var(--surface)',
@@ -120,7 +120,6 @@ export default function Dashboard() {
         bottom: 0,
         zIndex: 50,
         transition: 'left 0.25s ease',
-        '@media (min-width: 768px)': { left: 0 },
       }}>
         {/* Logo */}
         <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid var(--border)' }}>
@@ -161,15 +160,36 @@ export default function Dashboard() {
         </nav>
 
         {/* New Workout CTA at bottom of sidebar */}
-        <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid var(--border)' }}>
-          <Link to="/workout/new" className="btn btn-primary" style={{ width: '100%', textAlign: 'center', display: 'block' }}>
-            + New Workout
-          </Link>
-        </div>
+        {/* Bottom of sidebar */}
+<div style={{ padding: '1rem 0.75rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+  <Link to="/workout/new" className="btn btn-primary" style={{ width: '100%', textAlign: 'center', display: 'block' }}>
+    + New Workout
+  </Link>
+  <button
+    onClick={async () => { await signOut(); navigate('/login'); }}
+    style={{
+      width: '100%',
+      padding: '0.55rem',
+      borderRadius: '8px',
+      border: '1px solid var(--border)',
+      background: 'transparent',
+      color: 'var(--muted)',
+      fontFamily: 'Syne',
+      fontWeight: 600,
+      fontSize: '0.82rem',
+      cursor: 'pointer',
+      transition: 'color 0.15s, border-color 0.15s',
+    }}
+    onMouseEnter={e => { e.target.style.color = 'var(--danger)'; e.target.style.borderColor = 'var(--danger)'; }}
+    onMouseLeave={e => { e.target.style.color = 'var(--muted)'; e.target.style.borderColor = 'var(--border)'; }}
+  >
+    Sign out
+  </button>
+</div>
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, marginLeft: '0px', minWidth: 0 }}>
+      <main className="gymiq-main" style={{ flex: 1, minWidth: 0 }}>
 
         {/* Sticky top bar */}
         <div style={{
@@ -187,6 +207,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {/* Hamburger for mobile */}
             <button
+              className="gymiq-hamburger"
               onClick={() => setSidebarOpen(o => !o)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text)', padding: '0.25rem' }}
             >
@@ -204,7 +225,7 @@ export default function Dashboard() {
           <Link to="/workout/new" className="btn btn-primary btn-sm">+ New Workout</Link>
         </div>
 
-        <div style={{ padding: '1.5rem', maxWidth: '900px' }}>
+        <div className="gymiq-main-inner">
 
           {/* Log today banner */}
           {!loading && !loggedToday && workouts.length > 0 && (
@@ -338,12 +359,20 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Sidebar spacer for desktop — push main content right */}
       <style>{`
         @media (min-width: 768px) {
-          main { margin-left: 220px !important; }
-          aside { left: 0 !important; }
-          button[onClick="setSidebarOpen"] { display: none; }
+          .gymiq-sidebar { left: 0 !important; }
+          .gymiq-main { margin-left: 220px !important; }
+          .gymiq-hamburger { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          .gymiq-sidebar { left: -220px; }
+          .gymiq-main { margin-left: 0 !important; }
+        }
+        .gymiq-main-inner {
+          max-width: 780px;
+          margin: 0 auto;
+          padding: 1.5rem;
         }
       `}</style>
     </div>
