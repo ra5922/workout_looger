@@ -291,3 +291,8 @@ input[type="date"] {
   .gymiq-hamburger      { display: none !important; }
   .gymiq-main-inner     { max-width: 780px; margin: 0 auto; padding: 1.5rem; }
 }
+.stat-value {
+  font-size: clamp(1rem, 3.5vw, 2rem);
+  word-break: break-all;
+  line-height: 1.1;
+}
