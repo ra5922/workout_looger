@@ -32,8 +32,8 @@ export default function BodyWeightTracker() {
     setEntries(prev => prev.filter(e => e.id !== id));
   };
 
-  const maxWeight = Math.max(...entries.map(e => e.weight_kg), 0);
-  const minWeight = Math.min(...entries.map(e => e.weight_kg), 0);
+  const maxWeight = entries.length > 0 ? Math.max(...entries.map(e => e.weight_kg)) : 0;
+const minWeight = entries.length > 0 ? Math.min(...entries.map(e => e.weight_kg)) : 0;
   const range = maxWeight - minWeight || 1;
   const W = 600, H = 200, PAD = 40;
   const getX = (i) => PAD + (i / Math.max(entries.length - 1, 1)) * (W - PAD * 2);
