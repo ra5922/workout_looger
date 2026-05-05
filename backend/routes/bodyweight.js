@@ -9,10 +9,22 @@ router.get('/', async (req, res) => {
       .from('body_weight')
       .select('*')
       .eq('user_id', req.user.id)
-      .order('date', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+
+    if (!data || data.length === 0) return res.json({ entries: [], stats: null });
+
+    const weights = data.map(e => e.weight_kg);
+    const stats = {
+      current: weights[weights.length - 1],
+      lowest: Math.min(...weights),
+      highest: Math.max(...weights),
+      total_change: +(weights[weights.length - 1] - weights[0]).toFixed(2),
+      total_entries: weights.length,
+    };
+
+    res.json({ entries: data, stats });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -27,11 +39,11 @@ router.post('/', async (req, res) => {
 
     const { data, error } = await supabase
       .from('body_weight')
-      .upsert({
+      .insert({
         user_id: req.user.id,
         weight_kg,
         date: date || new Date().toISOString().split('T')[0],
-      }, { onConflict: 'user_id,date' })
+      })
       .select()
       .single();
 
