@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getWorkouts, deleteWorkout, getStats, duplicateWorkout } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
-import RestTimer from '../components/RestTimer';
 
 function muscleGroupClass(group) {
   const map = { Chest: 'chest', Back: 'back', Legs: 'legs', Shoulders: 'shoulders', Arms: 'arms', Core: 'core', Cardio: 'cardio', 'Full Body': 'full-body' };
@@ -19,27 +18,10 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-// Calculate streak from workout dates
-function calcStreak(workouts) {
-  if (!workouts.length) return 0;
-  const dates = [...new Set(workouts.map(w => w.date))].sort().reverse();
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  if (dates[0] !== today && dates[0] !== yesterday) return 0;
-  let streak = 1;
-  for (let i = 1; i < dates.length; i++) {
-    const prev = new Date(dates[i - 1]);
-    const curr = new Date(dates[i]);
-    const diff = Math.round((prev - curr) / 86400000);
-    if (diff === 1) streak++;
-    else break;
-  }
-  return streak;
-}
-
+// Mini sparkline SVG
 function Sparkline({ data, color = 'var(--accent)' }) {
   if (!data || data.length < 2) return (
-    <svg viewBox="0 0 80 28" style={{ width: '80px', height: '28px', opacity: 0.25 }}>
+    <svg viewBox="0 0 80 28" style={{ width: '80px', height: '28px', opacity: 0.3 }}>
       <line x1="0" y1="14" x2="80" y2="14" stroke={color} strokeWidth="1.5" strokeDasharray="3,3" />
     </svg>
   );
@@ -62,11 +44,12 @@ function Sparkline({ data, color = 'var(--accent)' }) {
   );
 }
 
+// Enhanced stat card
 function StatCard({ value, label, trend, sparkData, sparkColor }) {
   const trendPositive = trend > 0;
   const showTrend = trend !== null && trend !== undefined && trend !== 0;
   return (
-    <div className="stat-card gymiq-stat-card" style={{
+    <div className="stat-card" style={{
       borderLeft: '3px solid var(--accent)',
       borderRadius: '10px',
       display: 'flex',
@@ -74,37 +57,34 @@ function StatCard({ value, label, trend, sparkData, sparkColor }) {
       gap: '0.2rem',
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-        {/* Value in plain text color, NOT yellow */}
-        <div style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 'clamp(1.1rem, 2.5vw, 1.7rem)', lineHeight: 1.1, color: 'var(--text)' }}>
-          {value}
-        </div>
+        <div className="stat-value" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.7rem)', lineHeight: 1.1 }}>{value}</div>
         {showTrend && (
           <span style={{
-            fontSize: '0.7rem', fontWeight: 700,
+            fontSize: '0.7rem',
+            fontWeight: 700,
             color: trendPositive ? '#40ff80' : 'var(--danger)',
             background: trendPositive ? 'rgba(64,255,128,0.12)' : 'rgba(255,80,80,0.12)',
-            padding: '0.15rem 0.4rem', borderRadius: '20px',
-            whiteSpace: 'nowrap', marginTop: '0.2rem',
+            padding: '0.15rem 0.4rem',
+            borderRadius: '20px',
+            whiteSpace: 'nowrap',
+            marginTop: '0.2rem',
           }}>
             {trendPositive ? '↑' : '↓'} {Math.abs(trend)}%
           </span>
         )}
       </div>
-      {/* Label in muted, not yellow */}
-      <div style={{ fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>
-        {label}
-      </div>
-      <Sparkline data={sparkData} color={sparkColor || '#888'} />
+      <div className="stat-label" style={{ marginBottom: '0.4rem' }}>{label}</div>
+      <Sparkline data={sparkData} color={sparkColor || 'var(--accent)'} />
     </div>
   );
 }
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Home', icon: '▦' },
+  { to: '/', label: 'Dashboard', icon: '▦' },
   { to: '/progress', label: 'Progress', icon: '↗' },
   { to: '/weekly', label: 'Weekly', icon: '◫' },
   { to: '/templates', label: 'Templates', icon: '❐' },
-  { to: '/bodyweight', label: 'Weight', icon: '◎' },
+  { to: '/bodyweight', label: 'Body Weight', icon: '◎' },
 ];
 
 export default function Dashboard() {
@@ -118,7 +98,6 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('date');
   const [duplicating, setDuplicating] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [timerOpen, setTimerOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([getWorkouts(), getStats()])
@@ -142,7 +121,9 @@ export default function Dashboard() {
       const refreshed = await getWorkouts();
       setWorkouts(refreshed);
       navigate(`/workout/${newWorkout.id}`);
-    } catch (err) { alert('Failed to duplicate: ' + err.message); }
+    } catch (err) {
+      alert('Failed to duplicate: ' + err.message);
+    }
     setDuplicating(null);
   };
 
@@ -164,6 +145,7 @@ export default function Dashboard() {
     return 0;
   });
 
+  // Last 7 & prev 7 days
   const now = new Date();
   const last7 = Array.from({ length: 7 }, (_, i) =>
     new Date(now - (6 - i) * 86400000).toISOString().split('T')[0]
@@ -188,20 +170,31 @@ export default function Dashboard() {
     return Math.round(((t - p) / p) * 100);
   };
 
-  const sessionsTrend = weekTrend(sessionsSparkData, prev7.map(d => workouts.filter(w => w.date === d).length));
-  const volumeTrend = weekTrend(volumeSparkData, prev7.map(d => workouts.filter(w => w.date === d).reduce((s, w) => s + getVolume(w), 0)));
-  const avgExTrend = weekTrend(avgExSparkData, prev7.map(d => {
-    const ws = workouts.filter(w => w.date === d);
-    return ws.length ? ws.reduce((s, w) => s + (w.workout_exercises?.length || 0), 0) / ws.length : 0;
-  }));
+  const sessionsTrend = weekTrend(
+    sessionsSparkData,
+    prev7.map(d => workouts.filter(w => w.date === d).length)
+  );
+  const volumeTrend = weekTrend(
+    volumeSparkData,
+    prev7.map(d => workouts.filter(w => w.date === d).reduce((s, w) => s + getVolume(w), 0))
+  );
+  const avgExTrend = weekTrend(
+    avgExSparkData,
+    prev7.map(d => {
+      const ws = workouts.filter(w => w.date === d);
+      return ws.length ? ws.reduce((s, w) => s + (w.workout_exercises?.length || 0), 0) / ws.length : 0;
+    })
+  );
 
-  const totalVolume = workouts.flatMap(w => w.workout_exercises || [])
+  const totalVolume = workouts
+    .flatMap(w => w.workout_exercises || [])
     .reduce((sum, ex) => sum + (ex.sets * ex.reps * (ex.weight_kg || 0)), 0);
+
   const prCount = stats ? Object.keys(stats.personal_records).length : 0;
   const avgExercises = workouts.length > 0
-    ? Math.round(workouts.flatMap(w => w.workout_exercises || []).length / workouts.length) : 0;
+    ? Math.round(workouts.flatMap(w => w.workout_exercises || []).length / workouts.length)
+    : 0;
   const loggedToday = workouts.some(w => formatDate(w.date) === 'Today');
-  const streak = calcStreak(workouts);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -218,7 +211,6 @@ export default function Dashboard() {
         position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-220px', bottom: 0,
         zIndex: 50, transition: 'left 0.25s ease',
       }}>
-        {/* Logo - yellow used intentionally here only */}
         <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid var(--border)' }}>
           <span style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '1.3rem', color: 'var(--accent)', letterSpacing: '-0.02em' }}>
             GYMIQ
@@ -233,11 +225,11 @@ export default function Dashboard() {
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
                 padding: '0.6rem 0.85rem', borderRadius: '8px', textDecoration: 'none',
                 fontFamily: 'Syne', fontWeight: active ? 700 : 500, fontSize: '0.88rem',
-                color: active ? '#000' : 'var(--text)',
+                color: active ? 'var(--bg)' : 'var(--text)',
                 background: active ? 'var(--accent)' : 'transparent',
                 transition: 'background 0.15s, color 0.15s',
               }}>
-                <span style={{ fontSize: '0.9rem', opacity: active ? 1 : 0.5 }}>{icon}</span>
+                <span style={{ fontSize: '0.9rem', opacity: active ? 1 : 0.6 }}>{icon}</span>
                 {label}
               </Link>
             );
@@ -265,9 +257,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main */}
-      <main className="gymiq-main" style={{ flex: 1, minWidth: 0, paddingBottom: '5rem' }}>
-
-        {/* Sticky top bar */}
+      <main className="gymiq-main" style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           position: 'sticky', top: 0, zIndex: 30, background: 'var(--bg)',
           borderBottom: '1px solid var(--border)', padding: '0.85rem 1.5rem',
@@ -280,29 +270,11 @@ export default function Dashboard() {
             </button>
             <div>
               {firstName && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {/* Greeting in muted, not yellow */}
-                  <p style={{ color: 'var(--muted)', fontFamily: 'Syne', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-                    {isNewUser ? `Welcome, ${firstName}!` : `Hey, ${firstName}`}
-                  </p>
-                  {/* Streak indicator — yellow used intentionally as highlight */}
-                  {streak > 0 && (
-                    <span style={{
-                      fontSize: '0.72rem', fontWeight: 700,
-                      background: 'rgba(232,255,71,0.12)',
-                      color: 'var(--accent)',
-                      border: '1px solid rgba(232,255,71,0.25)',
-                      padding: '0.1rem 0.5rem',
-                      borderRadius: '20px',
-                    }}>
-                      🔥 {streak} day{streak > 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
+                <p style={{ color: 'var(--accent)', fontFamily: 'Syne', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                  {isNewUser ? `Welcome, ${firstName}! 💪` : `Hey, ${firstName} 💪`}
+                </p>
               )}
-              <h1 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '1.1rem', margin: 0, color: 'var(--text)' }}>
-                My Workouts
-              </h1>
+              <h1 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>My Workouts</h1>
             </div>
           </div>
           <Link to="/workout/new" className="btn btn-primary btn-sm">+ New Workout</Link>
@@ -313,39 +285,32 @@ export default function Dashboard() {
           {!loading && !loggedToday && workouts.length > 0 && (
             <Link to="/workout/new" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'var(--surface)', color: 'var(--text)',
-              border: '1px solid var(--border)',
-              borderLeft: '3px solid var(--accent)',
-              borderRadius: '10px', padding: '0.85rem 1.25rem',
-              marginBottom: '1.5rem', textDecoration: 'none',
-              fontFamily: 'Syne', fontWeight: 600, fontSize: '0.9rem',
-              transition: 'border-color 0.15s',
+              background: 'var(--accent)', color: 'var(--bg)', borderRadius: '10px',
+              padding: '0.85rem 1.25rem', marginBottom: '1.5rem', textDecoration: 'none',
+              fontFamily: 'Syne', fontWeight: 700, fontSize: '0.9rem',
             }}>
-              <span>🏋️ Haven't logged today yet</span>
-              {/* Yellow only on the CTA arrow */}
-              <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 700 }}>Log now →</span>
+              <span>🏋️ You haven't logged today's workout yet</span>
+              <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Log now →</span>
             </Link>
           )}
 
-          {/* Stats grid */}
+          {/* Enhanced Stats grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            <StatCard value={workouts.length} label="Sessions" trend={sessionsTrend} sparkData={sessionsSparkData} sparkColor="#888" />
+            <StatCard value={workouts.length} label="Sessions" trend={sessionsTrend} sparkData={sessionsSparkData} />
             <StatCard value={`${Math.round(totalVolume).toLocaleString()} kg`} label="Total lifted" trend={volumeTrend} sparkData={volumeSparkData} sparkColor="#40b4ff" />
             <StatCard value={prCount} label="Exercises tracked" trend={null} sparkData={Array(7).fill(prCount)} sparkColor="#b08dff" />
             <StatCard value={avgExercises} label="Avg / session" trend={avgExTrend} sparkData={avgExSparkData} sparkColor="#40ff80" />
           </div>
 
-          {/* Personal Records — yellow only on PR values */}
           {stats && prCount > 0 && (
             <div className="card" style={{ marginBottom: '1.5rem' }}>
-              <h2 style={{ fontFamily: 'Syne', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <h2 style={{ fontFamily: 'Syne', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 🏆 Personal Records
               </h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {Object.entries(stats.personal_records).map(([ex, kg]) => (
                   <div key={ex} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.9rem', fontSize: '0.85rem' }}>
                     <span style={{ color: 'var(--muted)' }}>{ex}: </span>
-                    {/* Yellow highlight only on the record value */}
                     <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{kg} kg</span>
                   </div>
                 ))}
@@ -380,13 +345,13 @@ export default function Dashboard() {
               <button className="btn btn-ghost" onClick={() => setSearch('')} style={{ marginTop: '0.75rem' }}>Clear search</button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', paddingBottom: '3rem' }}>
               {sorted.map(w => (
-                <Link to={`/workout/${w.id}`} key={w.id} className="workout-card gymiq-workout-card" style={{ display: 'block', textDecoration: 'none' }}>
+                <Link to={`/workout/${w.id}`} key={w.id} className="workout-card" style={{ display: 'block', textDecoration: 'none' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-                        <h3 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '1rem', margin: 0, color: 'var(--text)' }}>{w.name}</h3>
+                        <h3 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '1rem', margin: 0 }}>{w.name}</h3>
                         <span style={{ fontSize: '0.75rem', color: 'var(--muted)', background: 'var(--surface2)', padding: '0.2rem 0.6rem', borderRadius: '20px' }}>
                           {formatDate(w.date)}
                         </span>
@@ -420,47 +385,6 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Rest Timer panel */}
-      {timerOpen && <RestTimer onClose={() => setTimerOpen(false)} />}
-
-      {/* Bottom nav bar — mobile + desktop */}
-      <nav style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'var(--surface)', borderTop: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-        padding: '0.5rem 0', zIndex: 60, height: '56px',
-      }}>
-        {NAV_ITEMS.slice(0, 4).map(({ to, label, icon }) => {
-          const active = location.pathname === to;
-          return (
-            <Link key={to} to={to} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
-              textDecoration: 'none', padding: '0.25rem 0.75rem',
-              color: active ? 'var(--accent)' : 'var(--muted)',
-              fontFamily: 'Syne', fontSize: '0.6rem', fontWeight: active ? 700 : 500,
-              transition: 'color 0.15s',
-            }}>
-              <span style={{ fontSize: '1rem' }}>{icon}</span>
-              {label}
-            </Link>
-          );
-        })}
-        {/* Rest Timer button in bottom nav */}
-        <button
-          onClick={() => setTimerOpen(o => !o)}
-          style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
-            background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0.75rem',
-            color: timerOpen ? 'var(--accent)' : 'var(--muted)',
-            fontFamily: 'Syne', fontSize: '0.6rem', fontWeight: timerOpen ? 700 : 500,
-            transition: 'color 0.15s',
-          }}
-        >
-          <span style={{ fontSize: '1rem' }}>⏱</span>
-          Timer
-        </button>
-      </nav>
-
       <style>{`
         @media (min-width: 768px) {
           .gymiq-sidebar { left: 0 !important; }
@@ -475,23 +399,6 @@ export default function Dashboard() {
           max-width: 780px;
           margin: 0 auto;
           padding: 1.5rem;
-        }
-        .gymiq-stat-card {
-          transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-          cursor: default;
-        }
-        .gymiq-stat-card:hover {
-          border-color: var(--accent) !important;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 20px rgba(232,255,71,0.08);
-        }
-        .gymiq-workout-card {
-          transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s !important;
-        }
-        .gymiq-workout-card:hover {
-          border-color: #444 !important;
-          transform: translateY(-2px) !important;
-          box-shadow: 0 4px 24px rgba(232,255,71,0.06) !important;
         }
       `}</style>
     </div>
