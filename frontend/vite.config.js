@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'https://workout-looger.onrender.com',
+      '/api': 'http://localhost:5001',
     },
   },
 });

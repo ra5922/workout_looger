@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getWorkout, updateWorkout, getExercises } from '../lib/api';
-import { supabase } from '../lib/supabase';
+
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Full Body'];
 
@@ -25,7 +25,7 @@ export default function EditWorkout() {
       setDate(workout.date);
       setNotes(workout.notes || '');
       setRows((workout.workout_exercises || []).map(ex => ({
-        exercise_id: ex.exercise_id,
+        exercise_id: ex.exercise_id || ex.exercises?.id,
         sets: ex.sets,
         reps: ex.reps,
         weight_kg: ex.weight_kg,
@@ -47,35 +47,14 @@ export default function EditWorkout() {
     setSaving(true);
     setError('');
     try {
-      // Update workout info
-      await updateWorkout(id, { name, date, notes });
-
-      // Get auth token for direct Supabase calls
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      };
-
-      // Delete old exercises then re-insert
-      await fetch(`/api/workouts/${id}/exercises`, { method: 'DELETE', headers });
-
       const validRows = rows.filter(r => r.exercise_id);
-      if (validRows.length > 0) {
-        await fetch(`/api/workouts/${id}/exercises`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ exercises: validRows }),
-        });
-      }
-
+      await updateWorkout(id, { name, date, notes, exercises: validRows });
       navigate(`/workout/${id}`);
     } catch (err) {
       setError(err.message);
       setSaving(false);
     }
   };
-
   if (loading) return <><Navbar /><div className="loading">Loading…</div></>;
 
   return (

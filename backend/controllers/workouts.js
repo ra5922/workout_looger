@@ -71,7 +71,7 @@ const createWorkout = async (req, res) => {
 
 // PUT /api/workouts/:id
 const updateWorkout = async (req, res) => {
-  const { name, date, notes } = req.body;
+  const { name, date, notes, exercises } = req.body;
 
   const { data, error } = await supabase
     .from('workouts')
@@ -82,9 +82,32 @@ const updateWorkout = async (req, res) => {
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
+
+  // Update exercises if provided
+  if (exercises !== undefined) {
+    // Delete old exercises
+    await supabase
+      .from('workout_exercises')
+      .delete()
+      .eq('workout_id', req.params.id);
+
+    // Insert new exercises
+    if (exercises.length > 0) {
+      const rows = exercises.map((ex, i) => ({
+        workout_id: req.params.id,
+        exercise_id: ex.exercise_id,
+        sets: ex.sets,
+        reps: ex.reps,
+        weight_kg: ex.weight_kg,
+        notes: ex.notes,
+        order: i,
+      }));
+      await supabase.from('workout_exercises').insert(rows);
+    }
+  }
+
   res.json(data);
 };
-
 // DELETE /api/workouts/:id
 const deleteWorkout = async (req, res) => {
   const { error } = await supabase
